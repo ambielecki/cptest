@@ -1,0 +1,39 @@
+services:
+  nginx-proxy:
+    container_name: nginx-proxy
+    build: ./builds/nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - ./certs:/etc/nginx/certs
+
+  mariadb:
+    container_name: mariadb
+    image: mariadb:10.3.9
+    command: mysqld --character-set-server=utf8 --collation-server=utf8_unicode_ci --default-authentication-plugin=mysql_native_password --sql_mode="IGNORE_SPACE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION"
+    ports:
+      - "33060:3306"
+    volumes:
+      - ./db-data:/var/lib/mysql
+    working_dir: /var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+
+  ubuntu:
+    container_name: ubuntu
+    build: ./builds/74-ubuntu
+    environment:
+      - VIRTUAL_HOST=commdev.test
+    volumes:
+      - ../commdev:/var/www/commdev
+    working_dir: /var/www/commdev
+    links:
+      - mariadb
+
+  docker-test:
+    container_name: docker-test
+    build: ./builds/74-ubuntu
+    links:
+      - mariadb
